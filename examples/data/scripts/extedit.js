@@ -42,7 +42,7 @@ function utf8_decode ( str_data ) {
         }
     }
 
-    return tmp_arr.join('').slice(0, -1);
+    return tmp_arr.join('');
 }
 
 
