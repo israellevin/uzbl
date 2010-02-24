@@ -16,7 +16,6 @@ var uzbldivid = uzblid + '_div_container';
 var doc = document;
 var win = window;
 var links = document.links;
-var forms = document.forms;
 //Make onlick-links "clickable"
 try {
     HTMLElement.prototype.click = function() {
@@ -98,7 +97,7 @@ function generateHint(el, label) {
     hint.style.backgroundColor = 'black';
     hint.style.opacity = '0.7';
     hint.style.border = '2px solid black';
-    hint.style.color = '#ddddff';
+    hint.style.color = 'yellow';
     hint.style.fontSize = '12px';
     hint.style.fontWeight = 'bold';
     hint.style.lineHeight = '12px';
@@ -130,22 +129,7 @@ function clickElem(item) {
         var name = item.tagName;
         if (name == 'A') {
             japton.run('event SET_KEYCMD');
-            item.click();
-            window.location = item.href;
-        } else if (name == 'INPUT') {
-            var type = item.getAttribute('type').toUpperCase();
-            if (type == 'TEXT' || type == 'FILE' || type == 'PASSWORD') {
-                item.focus();
-                item.select();
-            } else {
-                item.click();
-            }
-        } else if (name == 'TEXTAREA' || name == 'SELECT') {
-            item.focus();
-            item.select();
-        } else {
-            item.click();
-            window.location = item.href;
+            japton.run('sh "uzbl-browser -g m ' + item.href + '"');
         }
     }
 }
@@ -158,19 +142,6 @@ function addLinks() {
         var li = links[l];
         if (isVisible(li) && elementInViewport(li)) {
             res[0].push(li);
-        }
-    }
-    return res;
-}
-//Same as above, just for the form elements
-function addFormElems() {
-    res = [[], []];
-    for (var f = 0; f < forms.length; f++) {
-        for (var e = 0; e < forms[f].elements.length; e++) {
-            var el = forms[f].elements[e];
-            if (el && ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].indexOf(el.tagName) + 1 && isVisible(el) && elementInViewport(el)) {
-                res[0].push(el);
-            }
         }
     }
     return res;
@@ -237,9 +208,7 @@ function followLinks(follow) {
     var s = follow.split('');
     var linknr = labelToInt(follow);
     if (document.body) document.body.setAttribute('onkeyup', 'keyPressHandler(event)');
-    var linkelems = addLinks();
-    var formelems = addFormElems();
-    var elems = [linkelems[0].concat(formelems[0]), linkelems[1].concat(formelems[1])];
+    var elems = addLinks();
     var len = labelLength(elems[0].length);
     var oldDiv = doc.getElementById(uzbldivid);
     var leftover = [[], []];
