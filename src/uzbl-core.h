@@ -106,6 +106,7 @@ typedef struct {
 /* networking */
 typedef struct {
     SoupSession *soup_session;
+    SoupCookieJar *soup_cookie_jar;
     SoupLogger *soup_logger;
     char *proxy_url;
     char *useragent;
@@ -124,6 +125,7 @@ typedef struct {
     gchar*   socket_dir;
     gchar*   download_handler;
     gchar*   cookie_handler;
+    gchar*   authentication_handler;
     gchar*   new_window;
     gchar*   default_font_family;
     gchar*   monospace_font_family;
@@ -389,13 +391,18 @@ void
 run_external_js (WebKitWebView * web_view, GArray *argv, GString *result);
 
 void
-eval_js(WebKitWebView * web_view, gchar *script, GString *result);
+eval_js(WebKitWebView * web_view, gchar *script, GString *result, const gchar *script_file);
+
+void
+handle_authentication (SoupSession *session,
+                            SoupMessage *msg,
+                            SoupAuth    *auth,
+                            gboolean     retrying,
+                            gpointer     user_data);
 
 void handle_cookies (SoupSession *session,
                             SoupMessage *msg,
                             gpointer     user_data);
-void
-save_cookies (SoupMessage *msg, gpointer     user_data);
 
 void
 set_var(WebKitWebView *page, GArray *argv, GString *result);
