@@ -1051,6 +1051,7 @@ eval_js(WebKitWebView * web_view, gchar *script, GString *result, const char *fi
     WebKitWebFrame *frame;
     JSGlobalContextRef context;
     JSObjectRef globalobject;
+    JSStringRef var_name;
     JSStringRef js_file;
     JSStringRef js_script;
     JSValueRef js_result;
