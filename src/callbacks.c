@@ -33,7 +33,7 @@ set_authentication_handler() {
     guint feature_is_set = g_slist_length(flist);
     g_slist_free(flist);
 
-    if (uzbl.behave.authentication_handler == NULL || *uzbl.behave.authentication_handler == NULL) {
+    if (uzbl.behave.authentication_handler == NULL || *uzbl.behave.authentication_handler == 0) {
         if (!feature_is_set)
             soup_session_add_feature_by_type
                 (uzbl.net.soup_session, (GType) WEBKIT_TYPE_SOUP_AUTH_DIALOG);
@@ -692,23 +692,7 @@ gboolean
 download_cb (WebKitWebView *web_view, GObject *download, gpointer user_data) {
     (void) web_view;
     (void) user_data;
-    if (uzbl.behave.download_handler) {
-        const gchar* uri = webkit_download_get_uri ((WebKitDownload*)download);
-        if (uzbl.state.verbose)
-            printf("Download -> %s\n",uri);
 
-        /* if urls not escaped, we may have to escape and quote uri before this call */
-        GString *args = g_string_new(uri);
-
-        if (uzbl.net.proxy_url) {
-           g_string_append_c(args, ' ');
-           g_string_append(args, uzbl.net.proxy_url);
-        }
-
-        run_handler(uzbl.behave.download_handler, args->str);
-
-        g_string_free(args, TRUE);
-    }
     send_event(DOWNLOAD_REQ, webkit_download_get_uri ((WebKitDownload*)download), NULL);
     return (FALSE);
 }

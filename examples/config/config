@@ -1,7 +1,7 @@
 # example uzbl config.
 # all settings are optional.  you can use uzbl without any config at all (but it won't do much)
 
-set prefix     = /usr/local
+set prefix = /usr/local
 
 # === Shortcuts / Aliases  ===================================================
 
@@ -43,11 +43,12 @@ set scripts_dir     = $XDG_DATA_HOME/uzbl:@prefix/share/uzbl/examples/data:scrip
 # support events that can wait for a response from a script.
 set cookie_handler      = talk_to_socket $XDG_CACHE_HOME/uzbl/cookie_daemon_socket
 set scheme_handler      = sync_spawn @scripts_dir/scheme.py
+set authentication_handler = sync_spawn @scripts_dir/auth.py
 
 # Open in the same window.
 #set new_window         = sh 'echo uri "$8" > $4'
 # Open a link in a new window. equivalent to default behavior
-set new_window          = sh 'uzbl-browser -g m $8'
+set new_window          = sh 'uzbl-browser -u $8'
 
 # --- Optional dynamic event handlers ----------------------------------------
 
@@ -55,16 +56,15 @@ set new_window          = sh 'uzbl-browser -g m $8'
 @on_event   DOWNLOAD_REQUEST    spawn @scripts_dir/download.sh %s \@proxy_url
 
 # Load start handler
-@on_event   LOAD_START     @set_status <span foreground="red">-</span>
+@on_event   LOAD_START     @set_status <span foreground="khaki">wait</span>
+# Reset the keycmd on navigation
+@on_event   LOAD_START     @set_mode
 
 # Load commit handlers
-@on_event   LOAD_COMMIT    @set_status <span background="yellow">|</span>
-@on_event   LOAD_COMMIT    script /root/.config/uzbl/scroll-percentage.js
-# Reset the keycmd on navigation
-@on_event   LOAD_COMMIT    @set_mode
+@on_event   LOAD_COMMIT    @set_status <span foreground="green">recv</span>
 
 # Load finish handlers
-@on_event   LOAD_FINISH    @set_status
+@on_event   LOAD_FINISH    @set_status <span foreground="gold">done</span>
 @on_event   LOAD_FINISH    spawn @scripts_dir/history.sh
 
 # Switch to insert mode if a (editable) html form is clicked
@@ -72,17 +72,15 @@ set new_window          = sh 'uzbl-browser -g m $8'
 # Switch to command mode if anything else is clicked
 @on_event   ROOT_ACTIVE    @set_mode command
 
-@on_event   GEOMETRY_CHANGED script /root/.config/uzbl/dynzoom.js
-
 # Example CONFIG_CHANGED event handler
 #@on_event  CONFIG_CHANGED print Config changed: %1 = %2
 
 
 # === Behaviour and appearance ===============================================
 
-set show_status       = 0
+set show_status       = 1
 set status_top        = 0
-set status_background = black
+set status_background = #303030
 
 set modcmd_style      = weight="bold" foreground="red"
 set keycmd_style      = weight="light" foreground="red"
@@ -91,26 +89,24 @@ set cursor_style      = underline="single"
 set completion_style  = foreground="green"
 set hint_style        = weight="bold"
 
-#set mode_section      = <span background="green" foreground="black">\@[\@mode_indicator]\@</span>
-set keycmd_section    = <span \@prompt_style>\@[\@keycmd_prompt]\@</span><span \@modcmd_style>\@modcmd</span><span \@keycmd_style>\@keycmd</span>
-set progress_section  = <span foreground="yellow">\@[\@progress_format]\@</span>
-set scroll_section    = <span foreground="#00ff00">\@[\@scroll_message]\@</span>
-set uri_section       = <span foreground="white">\@[\@uri]\@</span>
-set name_section      = <span>\@[\@NAME]\@</span>
-set status_section    = <span>\@status_message</span>
-set selected_section  = <span foreground="#60ff60">\@[\@SELECTED_URI]\@</span>
+set mode_section      = <span background="khaki" foreground="black">[\@[\@mode_indicator]\@]</span>
+set keycmd_section    = [<span \@prompt_style>\@[\@keycmd_prompt]\@</span><span \@modcmd_style>\@modcmd</span><span \@keycmd_style>\@keycmd</span><span \@completion_style>\@completion_list</span>]
+set progress_section  = <span foreground="#606060">\@[\@progress_format]\@</span>
+set scroll_section    = <span foreground="#606060">\@[\@scroll_message]\@</span>
+set uri_section       = <span foreground="#99FF66">\@[\@uri]\@</span>
+set name_section      = <span foreground="khaki">\@[\@NAME]\@</span>
+set status_section    = <span foreground="orange">\@status_message</span>
+set selected_section  = <span foreground="#606060">\@[\@SELECTED_URI]\@</span>
 
-set status_format     = <span font_family="monospace">@{status_section}@{keycmd_section} @{selected_section} @{uri_section} @{scroll_section} @{progress_section}</span>
+set status_format     = <span font_family="monospace">@mode_section @keycmd_section @progress_section @uri_section @name_section @status_section @scroll_section @selected_section</span>
 
-set icon = /usr/local/share/uzbl/examples/data/uzbl/uzbl.png
-set title_format_short = \@TITLE
-set title_format_long = \@progress_format <\@mode_indicator> [\@{raw_keycmd}] \@scroll_message - \@TITLE
+set title_format_long = \@keycmd_prompt \@raw_modcmd \@raw_keycmd \@TITLE - Uzbl browser <\@NAME> \@SELECTED_URI
 
 # Progress bar config
 @progress width    = 8
 # %d = done, %p = pending %c = percent done, %i = int done, %s = spinner,
 # %t = percent pending, %o = int pending, %r = sprite scroll
-@progress format   = %c
+@progress format   = [%d>%p]%c
 @progress done     = =
 @progress pending  =
 
@@ -124,13 +120,9 @@ set title_format_long = \@progress_format <\@mode_indicator> [\@{raw_keycmd}] \@
 # === Core settings ==========================================================
 
 set useragent         = Uzbl (Webkit @WEBKIT_MAJOR.@WEBKIT_MINOR.@WEBKIT_MICRO) (@(+uname -o)@ @(+uname -m)@ [@ARCH_UZBL]) (Commit @COMMIT)
-set useragent         = Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/532.0 (KHTML, like Gecko) Chrome/3.0.196.0 Safari/532.0
 set fifo_dir          = /tmp
 set socket_dir        = /tmp
 
-set disable_plugins = 1
-set enable_spellcheck = 0
-set scrollbars_visible = 0
 
 # === Key modmapping and ignoring ============================================
 
@@ -182,8 +174,6 @@ set ebind = @mode_bind global,-insert
 @ebind  <Ctrl>u      = event SET_KEYCMD
 @ebind  <Ctrl>a      = event SET_CURSOR_POS 0
 @ebind  <Ctrl>e      = event SET_CURSOR_POS -1
-@ebind  <Ctrl>v      = event APPEND_KEYCMD \@<document.getSelection()>\@
-@ebind  <Ctrl>r = event APPEND_KEYCMD \@uri
 
 # Keycmd injection/append examples.
 #@ebind  <Ctrl>su = event INJECT_KEYCMD \@uri
@@ -195,7 +185,7 @@ set ebind = @mode_bind global,-insert
 # === Mouse bindings =========================================================
 
 # Middle click open in new window
-@bind  <Button2>  = sh 'if [ "\@SELECTED_URI" ]; then uzbl-browser -g m "\@SELECTED_URI"; else echo "uri $(xclip -o)" > $4; fi'
+@bind  <Button2>  = sh 'if [ "\@SELECTED_URI" ]; then uzbl-browser -u "\@SELECTED_URI"; else echo "uri $(xclip -o | sed s/\\\@/%40/g)" > $4; fi'
 
 
 # === Keyboard bindings ======================================================
@@ -209,17 +199,13 @@ set ebind = @mode_bind global,-insert
 @cbind  k            = scroll vertical -20
 @cbind  h            = scroll horizontal -20
 @cbind  l            = scroll horizontal 20
-@cbind  J            = scroll vertical 100%
-@cbind  K            = scroll vertical -100%
-@cbind  H            = scroll horizontal -100%
-@cbind  L            = scroll horizontal 100%
 @cbind  <Page_Up>    = scroll vertical -100%
 @cbind  <Page_Down>  = scroll vertical 100%
-@cbind  <            = scroll vertical begin
-@cbind  >            = scroll vertical end
+@cbind  <<           = scroll vertical begin
+@cbind  >>           = scroll vertical end
 @cbind  ^            = scroll horizontal begin
 @cbind  $            = scroll horizontal end
-@cbind  <Space>      = scroll vertical 100%
+@cbind  <Space>      = scroll vertical end
 
 # --- Navigation binds ---
 @cbind  b   = back
@@ -229,7 +215,7 @@ set ebind = @mode_bind global,-insert
 @cbind  R   = reload_ign_cache
 
 # --- Zoom binds ---
-@cbind  +   = chain "zoom_in" "sh echo \@zoom_level"
+@cbind  +   = zoom_in
 @cbind  -   = zoom_out
 @cbind  T   = toggle_zoom_type
 @cbind  1   = set zoom_level = 1.0
@@ -248,8 +234,10 @@ set ebind = @mode_bind global,-insert
 # --- Uzbl tabbed binds ---
 # Tab opening
 @cbind  gn              = event NEW_TAB
+@cbind  gN              = event NEW_TAB_NEXT
 @cbind  go<uri:>_       = event NEW_TAB %s
-@cbind  gY              = sh 'echo "event NEW_TAB `xclip -selection primary -o`" > $4'
+@cbind  gO<uri:>_       = event NEW_TAB_NEXT %s
+@cbind  gY              = sh 'echo "event NEW_TAB `xclip -selection primary -o | sed s/\\\@/%40/g`" > $4'
 # Closing / resting
 @cbind  gC              = exit
 @cbind  gQ              = event CLEAN_TABS
@@ -267,34 +255,32 @@ set preset = event PRESET_TABS
 @cbind  gli                 = @preset list
 
 # --- Web searching binds ---
-@cbind  g<:>_               = uri http://www.google.com/search?q=\@<encodeURIComponent(%r)>\@
-@cbind  G<:\@(xclip -o)\@>_ = uri http://www.google.com/search?q=\@<encodeURIComponent(%r)>\@
-@cbind  \\awiki<Archwiki:>_ = uri http://wiki.archlinux.org/index.php/Special:Search?search=\@<encodeURIComponent(%r)>\@&go=Go
-@cbind  w<:>_               = uri http://en.wikipedia.org/w/index.php?title=Special:Search&search=\@<encodeURIComponent(%r)>\@&go=Go
-@cbind  qg<:>_  = js var d = document.createElement('div');d.innerHTML = '<form action="https://ssl.scroogle.org/cgi-bin/nbbwssl.cgi" method="POST" id="scroogle"><input type="hidden" name="Gw" value="%s" /></form>'; document.body.appendChild(d); document.forms['scroogle'].submit();
+@cbind  gg<Google:>_         = uri http://www.google.com/search?q=\@<encodeURIComponent(%r)>\@
+@cbind  \\awiki<Archwiki:>_  = uri http://wiki.archlinux.org/index.php/Special:Search?search=\@<encodeURIComponent(%r)>\@&go=Go
+@cbind  \\wiki<Wikipedia:>_  = uri http://en.wikipedia.org/w/index.php?title=Special:Search&search=\@<encodeURIComponent(%r)>\@&go=Go
 
 # --- Handy binds ---
 # Set function shortcut
-#@cbind  s<var:>_<value:>_  = set %1 = %2
+@cbind  s<var:>_<value:>_  = set %1 = %2
 # Exit binding
-@cbind  d                  = chain 'spawn /root/.config/uzbl/exit.sh' 'exit'
-@cbind  D                  = spawn /root/.config/uzbl/exitundo.sh
+@cbind  ZZ                 = exit
 # Dump config to stdout
 @cbind  !dump              = sh "echo dump_config > $4"
 # Reload config
 @cbind  !reload            = sh "sed '/^# === Post-load misc commands/,$d' $1 > $4"
-# Uzbl Terminal. TODO explain why this is useful
-#@cbind  <Ctrl><Alt>t  = sh 'xterm -e "socat unix-connect:$5 -"'
-@cbind  <Ctrl><Alt>t  = sh 'urxvt -e socat unix-connect:$5 -'
+# Use socat to directly inject commands into uzbl-core and view events
+# raised by uzbl-core:
+@cbind  <Ctrl><Alt>t  = sh 'xterm -e "socat unix-connect:$5 -"'
+#@cbind  <Ctrl><Alt>t  = sh 'urxvt -e socat unix-connect:$5 -'
 
 # --- Uri opening prompts ---
-@cbind  o<:>_          = script /root/.config/uzbl/intelo.js '%s'
+@cbind  o<uri:>_       = uri %s
 # Or have it load the current uri into the keycmd for editing
 @cbind  O<uri:\@uri>_  = uri %s
 
 # --- Mode setting binds ---
 # Changing mode via  set.
-@cbind  I  = chain 'script /root/.config/uzbl/gi.js' '@set_mode insert'
+@cbind  I  = @set_mode insert
 # Or toggle between modes by raising the toggle event.
 set toggle_cmd_ins = @toggle_modes command insert
 @cbind  i          = @toggle_cmd_ins
@@ -302,16 +288,16 @@ set toggle_cmd_ins = @toggle_modes command insert
 @bind   <Ctrl>i    = @toggle_cmd_ins
 
 # --- Hard-bound bookmarks ---
-@cbind  0   = uri http://google.com/ig
+@cbind  gh  = uri http://www.uzbl.org
 
 # --- Yanking & pasting binds ---
-@cbind  y   = sh 'echo -n $6 | xclip'
-#@cbind  yy  = sh 'echo -n $7 | xclip'
+@cbind  yu  = sh 'echo -n $6 | xclip'
+@cbind  yy  = sh 'echo -n $7 | xclip'
 
 # Go the page from primary selection
-@cbind  p   = sh 'echo "uri `xclip -selection primary -o`" > $4'
+@cbind  p   = sh 'echo "uri `xclip -selection primary -o | sed s/\\\@/%40/g`" > $4'
 # Go to the page in clipboard
-@cbind  P   = sh 'echo "uri `xclip -selection clipboard -o`" > $4'
+@cbind  P   = sh 'echo "uri `xclip -selection clipboard -o | sed s/\\\@/%40/g`" > $4'
 # Start a new uzbl instance from the page in primary selection
 @cbind  'p  = sh 'exec uzbl-browser --uri $(xclip -o)'
 
@@ -327,37 +313,21 @@ set toggle_cmd_ins = @toggle_modes command insert
 # --- Link following (similar to vimperator and konqueror) ---
 # Set custom keys you wish to use for navigation. Some common examples:
 set follow_hint_keys = 0123456789
-set follow_hint_keys = jfkdurmc
 #set follow_hint_keys = qwerty
 #set follow_hint_keys = asdfghjkl;
 #set follow_hint_keys = thsnd-rcgmvwb/;789aefijkopquxyz234
-@cbind  f*             = script /root/.config/uzbl/follow.js '@follow_hint_keys %s'
-@cbind  F*             = script /root/.config/uzbl/followNewWin.js '@follow_hint_keys %s'
-@cbind  s              = spawn /root/.config/uzbl/follow-dmenu.pl
-@cbind  <Ctrl><Return> = script /root/.config/uzbl/followSelected.js
-
-@cbind  <Ctrl>u = sh 'echo "uri $(dirname $6)" > $4'
-@cbind  ]       = script /root/.config/uzbl/next.js
-@cbind  [       = script /root/.config/uzbl/prev.js
-@cbind  ql      = set uri = \@{uri}?logout&logout
-@cbind  qa      = js uzblAdBlock();
-@cbind  qs      = chain 'set disable_scripts = 1' 'reload'
-@cbind  qp      = chain 'set disable_plugins = 1' 'reload'
-@cbind  qS      = chain 'set disable_scripts = 0' 'reload'
-@cbind  qP      = chain 'set disable_plugins = 0' 'reload'
+@cbind  fl*  = script @scripts_dir/follow.js '@follow_hint_keys %s'
 
 # --- Form filler binds ---
-# this script allows you to configure (per domain) values to fill in form
-# fields (eg login information) and to fill in these values automatically
-set formfiller = spawn @scripts_dir/formfiller
-@cbind  za  = @{formfiller}.sh
-@cbind  ze  = @{formfiller}.sh edit
-@cbind  zn  = @{formfiller}.sh new
-@cbind  zl  = @{formfiller}.sh load
-# Or the more advanced implementation using perl: (could not get this to run - Dieter)
-#@cbind  LL  = @{formfiller}.pl load
-#@cbind  LN  = @{formfiller}.pl new
-#@cbind  LE  = @{formfiller}.pl edit
+# This script allows you to configure (per domain) values to fill in form
+# fields (eg login information) and to fill in these values automatically.
+# This implementation allows you to save multiple profiles for each form
+# (think about multiple accounts on some website).
+set formfiller = spawn @scripts_dir/formfiller.sh
+@cbind  za  = @formfiller add
+@cbind  ze  = @formfiller edit
+@cbind  zn  = @formfiller new
+@cbind  zl  = @formfiller load
 
 # --- External edit script configuration & binds ---
 # Edit form input fields in an external editor (gvim, emacs, urxvt -e vim, ..)
@@ -366,7 +336,7 @@ set external_editor = gvim
 @cbind  E  = script /root/.config/uzbl/extedit.js
 # And add menu option.
 menu_editable_add Open in @external_editor = script /root/.config/uzbl/extedit.js
-@cbind  v  = sh 'echo "js document.documentElement.outerHTML" | socat - unix-connect:$5 | gvim -'
+@cbind  v  = sh 'echo "js document.documentElement.outerHTML" | socat - unix-connect:$5 | gvim
 
 # --- Examples ---
 # Example showing how to use uzbl's fifo to execute a command.
@@ -378,7 +348,7 @@ menu_editable_add Open in @external_editor = script /root/.config/uzbl/extedit.j
 
 # Default context menu
 menu_add Google = set uri = http://google.com
-menu_add Go Home = set uri = http://google.com/ig
+menu_add Go Home = set uri = http://uzbl.org
 menu_separator separator_1
 menu_add Quit uzbl = exit
 
@@ -395,12 +365,12 @@ set stack    = @mode_config stack
 
 # Command mode config.
 @command  keycmd_style        = foreground="red"
-@command  status_background   = black
-@command  mode_indicator      = C
+@command  status_background   = #202020
+@command  mode_indicator      = Cmd
 
 # Insert mode config.
-@insert   status_background   = #505050
-@insert   mode_indicator      = I
+@insert   status_background   = #303030
+@insert   mode_indicator      = Ins
 
 # Multi-stage-binding mode config.
 @stack    keycmd_events       = 1
@@ -408,15 +378,13 @@ set stack    = @mode_config stack
 @stack    forward_keys        = 0
 @stack    keycmd_style        = foreground="red"
 @stack    prompt_style        = foreground="#888" weight="light"
-@stack    status_background   = #502020
-@stack    mode_indicator      = B
+@stack    status_background   = #202020
+@stack    mode_indicator      = Bnd
 
 set default_mode = command
 
 
 # === Post-load misc commands  ===============================================
 
-toggle_zoom_type
-set zoom_level = 2.0
 # Set the "home" page.
 #set uri = uzbl.org/doesitwork/@COMMIT
