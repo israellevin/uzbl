@@ -3,7 +3,7 @@
 
 # set a variable when running `git --archive <hash/tag>` (this is what github does)
 # alternatively, you could also git get-tar-commit-id < tarball (but that's a bit dirtier)
-FROM_ARCHIVE=$Format:%H$
+FROM_ARCHIVE=abbcb2b61eaebeeaf025641b261594a0ab9a0cff
 
 # ... but try to use whatever git tells us if there is a .git folder
 if [ -d .git -a -r .git ]
